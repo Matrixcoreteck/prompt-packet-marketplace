@@ -69,6 +69,26 @@ export function CreatorAvatar({ name, size = 22 }) {
   );
 }
 
+export function BackButton({ onClick, label = "← BACK TO MARKETPLACE" }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        fontFamily: FONT_MONO,
+        fontSize: "11px",
+        letterSpacing: "0.08em",
+        color: COLORS.goldDim,
+        background: "transparent",
+        border: "none",
+        padding: 0,
+        cursor: "pointer",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 // Section heading used on the dark ink surfaces (browse page, library).
 export function SectionHeading({ kicker, title, right }) {
   return (

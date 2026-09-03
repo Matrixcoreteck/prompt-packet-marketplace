@@ -1,9 +1,12 @@
+import { groupOf } from "../theme";
+
 // ---------------------------------------------------------------------------
 // Sample marketplace data.
 //
-// The `stats` figures (rating, ratingCount, salesCount) are DEMO DATA, not
-// real transactions. They live in a `stats` object on each product so they
-// can be swapped for real database values later without touching components.
+// The `stats` figures (rating, ratingCount, salesCount) and `reviews` are
+// DEMO DATA, not real transactions or real customers. They live in optional
+// structures on each product so they can be swapped for real database values
+// later without touching components.
 //
 // Products created through the Sell-a-pack form get empty stats and render
 // as "NEW" until real data exists.
@@ -29,6 +32,10 @@ export const STARTER_PACKS = [
       "Rewrite this opener to sound like a peer, not a vendor: {{draft}}",
       "Generate 5 subject lines under 40 characters for an email about {{topic}}.",
     ],
+    reviews: [
+      { id: "r1-1", author: "Marcus T.", rating: 5, date: "Aug 2026", text: "Saved me hours of work. The prompts were much more useful than generic ChatGPT prompts." },
+      { id: "r1-2", author: "Dana R.", rating: 5, date: "Jul 2026", text: "Reply rates went up on my very first campaign. The organization by objection type is genuinely smart." },
+    ],
   },
   {
     id: "seed-2",
@@ -44,6 +51,11 @@ export const STARTER_PACKS = [
       "{{product}}, studio lighting, white seamless background, 85mm lens, product photography --ar 1:1",
       "{{product}} on a marble surface, soft natural light, shallow depth of field --ar 4:5",
     ],
+    reviews: [
+      { id: "r2-1", author: "Priya S.", rating: 5, date: "Aug 2026", text: "Very easy to use and the workflow actually makes sense. My product shots finally look professional." },
+      { id: "r2-2", author: "Leo K.", rating: 5, date: "Jul 2026", text: "Plug in the product name, get a shot I can actually put in the store. Worth every dollar." },
+      { id: "r2-3", author: "Sam W.", rating: 4, date: "Jun 2026", text: "Great formulas. Would love a few more lifestyle-scene variations." },
+    ],
   },
   {
     id: "seed-3",
@@ -57,6 +69,10 @@ export const STARTER_PACKS = [
     prompts: [
       "Write a 60-second faceless YouTube script hook about {{topic}}, no fluff, first line must state the payoff.",
       "Generate 8 video title options for {{topic}} optimized for click-through, under 60 characters each.",
+    ],
+    reviews: [
+      { id: "r3-1", author: "Jules A.", rating: 5, date: "Aug 2026", text: "The script hook prompt alone was worth the price. My retention graph finally looks normal." },
+      { id: "r3-2", author: "Renee P.", rating: 4, date: "Jul 2026", text: "Solid system for starting a faceless channel without wading through fluff." },
     ],
   },
   {
@@ -75,6 +91,10 @@ export const STARTER_PACKS = [
       "Draft a 3-email welcome sequence for new subscribers of {{newsletter_name}}, warm and personal tone.",
       "Suggest 5 lead-magnet ideas for a newsletter about {{niche}}, ranked by perceived value.",
       "Rewrite this paragraph to be 40% shorter without losing the voice: {{paragraph}}",
+    ],
+    reviews: [
+      { id: "r4-1", author: "Alicia M.", rating: 5, date: "Aug 2026", text: "My open rates are the best they've ever been. The welcome-sequence workflow is genuinely good." },
+      { id: "r4-2", author: "Tom H.", rating: 5, date: "Jul 2026", text: "Feels like a course I can run in any AI chat. The lead-magnet prompt was an unexpected favorite." },
     ],
   },
   {
@@ -95,6 +115,10 @@ export const STARTER_PACKS = [
       "Rewrite this LinkedIn post in our brand voice: {{post}}",
       "Audit these 5 social captions for voice consistency and flag mismatches: {{captions}}",
     ],
+    reviews: [
+      { id: "r5-1", author: "Nadia F.", rating: 5, date: "Aug 2026", text: "Finally got our voice down on paper. The audit prompt is sneaky useful — it catches things our whole team missed." },
+      { id: "r5-2", author: "Chris D.", rating: 4, date: "Jun 2026", text: "Good framework. Took a bit of tweaking for our niche, but that's expected." },
+    ],
   },
   {
     id: "seed-6",
@@ -111,6 +135,9 @@ export const STARTER_PACKS = [
       "Generate 5 attention-grabbing opening lines for a {{price_range}} {{property_type}} listing.",
       "Turn these bullet points into flowing marketing copy: {{features}}",
       "Write a neighborhood guide intro for {{neighborhood}} that sells the lifestyle, 100 words.",
+    ],
+    reviews: [
+      { id: "r6-1", author: "Derrick B.", rating: 5, date: "Jul 2026", text: "Listings write themselves now. My agent clients think I hired a copywriter." },
     ],
   },
   {
@@ -130,6 +157,10 @@ export const STARTER_PACKS = [
       "Generate 5 smart questions I should ask the interviewer about the {{role}} role.",
       "Do a mock interview: ask me one question at a time for a {{role}} role, wait for my answer, then give feedback.",
     ],
+    reviews: [
+      { id: "r7-1", author: "Maya C.", rating: 5, date: "Aug 2026", text: "Landed the job. The STAR-format prompt made interview prep way less painful than it usually is." },
+      { id: "r7-2", author: "Owen L.", rating: 5, date: "Jul 2026", text: "The mock interview prompt is brilliant — it actually waits for your answer and gives feedback." },
+    ],
   },
   {
     id: "seed-8",
@@ -147,16 +178,44 @@ export const STARTER_PACKS = [
       "Modern geometric monogram for the letters {{initials}}, gold on dark background, luxury feel --ar 1:1",
       "Mascot logo concept for {{brand}}, friendly character, bold outlines, sticker style --ar 1:1",
     ],
+    reviews: [
+      { id: "r8-1", author: "Freya N.", rating: 4, date: "Jun 2026", text: "Presented four strong concepts to the client in one afternoon. The monogram formula is my favorite." },
+    ],
   },
 ];
 
-// Fill in defaults for products that predate the stats/type fields
+// Creator profile demo data — keyed by creator name so it joins to any
+// product by `sellerName`. Replace with real creator accounts later.
+export const CREATOR_PROFILES = {
+  "Spark Tools AI":
+    "A small studio building no-fluff prompt systems for marketers and B2B teams. Every pack is tested on real campaigns before it ships.",
+  "Rift Creative":
+    "Newsletter strategists turned prompt makers. They build workflows that turn quiet audiences into growing, paying ones.",
+  "Atelier Nova":
+    "A design-led studio crafting prompt kits for brand identity work — from voice to visual identity.",
+  "Keystone Studio":
+    "Real-estate marketing specialists writing prompts that sell homes, not just describe them.",
+  "CareerCraft AI":
+    "Career coaches and recruiters building interview and job-search prompts that get people hired.",
+};
+
+export function creatorProfile(name) {
+  return {
+    name,
+    description:
+      CREATOR_PROFILES[name] ||
+      "An independent creator selling AI products on The Prompt Index.",
+  };
+}
+
+// Fill in defaults for products that predate the stats/type/reviews fields
 // (e.g. packs loaded from storage or created before this upgrade).
 export function normalizePack(p) {
   return {
     type: "Prompt Pack",
     ...p,
     stats: { rating: null, ratingCount: 0, salesCount: 0, ...(p.stats || {}) },
+    reviews: Array.isArray(p.reviews) ? p.reviews : [],
   };
 }
 
@@ -168,4 +227,17 @@ export function countLabel(pack) {
   if (pack.type === "Workflow") return "steps";
   if (pack.type === "Template") return "sections";
   return "prompts";
+}
+
+// Related products: same subcategory first, then same category group,
+// then anything else. Used by the product page's "You May Also Like".
+export function relatedPacks(packs, pack) {
+  const others = packs.filter((p) => p.id !== pack.id);
+  const sameCategory = others.filter((p) => p.category === pack.category);
+  const sameGroup = others.filter(
+    (p) => p.category !== pack.category && groupOf(p.category) === groupOf(pack.category)
+  );
+  const seen = new Set([...sameCategory, ...sameGroup].map((p) => p.id));
+  const rest = others.filter((p) => !seen.has(p.id));
+  return [...sameCategory, ...sameGroup, ...rest].slice(0, 3);
 }

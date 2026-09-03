@@ -7,7 +7,8 @@ import Hero from "./components/Hero";
 import FeaturedProducts from "./components/FeaturedProducts";
 import CategorySection from "./components/CategorySection";
 import ProductCard from "./components/ProductCard";
-import ProductDetail from "./components/ProductDetail";
+import ProductPage from "./components/ProductPage";
+import CreatorProfile from "./components/CreatorProfile";
 import SellView from "./components/SellView";
 import LibraryView from "./components/Library";
 import { SectionHeading } from "./components/ui";
@@ -15,11 +16,12 @@ import { SectionHeading } from "./components/ui";
 export default function App() {
   const { packs, addPack, error: packsError } = usePacks();
   const { owned, purchase } = usePurchases();
-  const [view, setView] = useState("browse"); // browse | sell | library
+  const [view, setView] = useState("browse"); // browse | sell | library | product | creator
   const [query, setQuery] = useState("");
   const [activeGroup, setActiveGroup] = useState("All");
   const [activeSubcategory, setActiveSubcategory] = useState("All");
-  const [selected, setSelected] = useState(null);
+  const [selectedId, setSelectedId] = useState(null);
+  const [creatorName, setCreatorName] = useState(null);
   const [purchasing, setPurchasing] = useState(false);
 
   const switchView = (v) => {
@@ -30,6 +32,16 @@ export default function App() {
   const selectGroup = (g) => {
     setActiveGroup(g);
     setActiveSubcategory("All");
+  };
+
+  const openProduct = (pack) => {
+    setSelectedId(pack.id);
+    switchView("product");
+  };
+
+  const openCreator = (name) => {
+    setCreatorName(name);
+    switchView("creator");
   };
 
   const filtered = (packs || []).filter((p) => {
@@ -46,6 +58,7 @@ export default function App() {
 
   const myLibrary = (packs || []).filter((p) => owned.has(p.id));
   const hasFilters = Boolean(query.trim()) || activeGroup !== "All";
+  const selectedPack = (packs || []).find((p) => p.id === selectedId);
 
   const scrollToCatalog = () => {
     const el = document.getElementById("catalog");
@@ -117,7 +130,7 @@ export default function App() {
           />
 
           {!hasFilters && packs && (
-            <FeaturedProducts packs={packs} owned={owned} onOpen={setSelected} />
+            <FeaturedProducts packs={packs} owned={owned} onOpen={openProduct} />
           )}
           {!hasFilters && (
             <CategorySection
@@ -236,7 +249,7 @@ export default function App() {
             ) : (
               <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}>
                 {filtered.map((p) => (
-                  <ProductCard key={p.id} pack={p} owned={owned.has(p.id)} onOpen={setSelected} />
+                  <ProductCard key={p.id} pack={p} owned={owned.has(p.id)} onOpen={openProduct} />
                 ))}
               </div>
             )}
@@ -244,11 +257,34 @@ export default function App() {
         </>
       )}
 
+      {view === "product" && selectedPack && (
+        <ProductPage
+          pack={selectedPack}
+          allPacks={packs || []}
+          owned={owned.has(selectedPack.id)}
+          purchasing={purchasing}
+          onBack={() => switchView("browse")}
+          onPurchase={handlePurchase}
+          onOpenProduct={openProduct}
+          onOpenCreator={openCreator}
+        />
+      )}
+
+      {view === "creator" && creatorName && (
+        <CreatorProfile
+          name={creatorName}
+          packs={packs || []}
+          owned={owned}
+          onOpenProduct={openProduct}
+          onBack={() => switchView("browse")}
+        />
+      )}
+
       {view === "library" && (
         <LibraryView
           packs={packs || []}
           owned={owned}
-          onOpen={setSelected}
+          onOpen={openProduct}
           onBrowse={() => switchView("browse")}
         />
       )}
@@ -260,16 +296,6 @@ export default function App() {
             setView("browse");
             setTimeout(scrollToCatalog, 50);
           }}
-        />
-      )}
-
-      {selected && (
-        <ProductDetail
-          pack={selected}
-          owned={owned.has(selected.id)}
-          onClose={() => setSelected(null)}
-          onPurchase={handlePurchase}
-          purchasing={purchasing}
         />
       )}
     </div>
