@@ -261,7 +261,7 @@ export default function App() {
         <ProductPage
           pack={selectedPack}
           allPacks={packs || []}
-          owned={owned.has(selectedPack.id)}
+          owned={owned}
           purchasing={purchasing}
           onBack={() => switchView("browse")}
           onPurchase={handlePurchase}

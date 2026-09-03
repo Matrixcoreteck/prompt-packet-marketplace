@@ -66,6 +66,7 @@ export default function ProductPage({
   onOpenCreator,
 }) {
   const stats = pack.stats || {};
+  const isOwned = owned.has(pack.id);
 
   return (
     <div>
@@ -129,7 +130,7 @@ export default function ProductPage({
               </div>
             </div>
             <div style={{ flex: "1 1 340px", maxWidth: "420px" }}>
-              <PurchaseCard pack={pack} owned={owned} purchasing={purchasing} onPurchase={onPurchase} />
+              <PurchaseCard pack={pack} owned={isOwned} purchasing={purchasing} onPurchase={onPurchase} />
             </div>
           </div>
         </div>
@@ -140,7 +141,7 @@ export default function ProductPage({
         className="px-6 md:px-10 py-12 max-w-[1100px] mx-auto flex flex-col"
         style={{ gap: "56px" }}
       >
-        <WhatsInside pack={pack} owned={owned} />
+        <WhatsInside pack={pack} owned={isOwned} />
         <TrySample pack={pack} />
         <WhatYouGet pack={pack} />
         <CreatorSection pack={pack} allPacks={allPacks} onOpenCreator={onOpenCreator} />
