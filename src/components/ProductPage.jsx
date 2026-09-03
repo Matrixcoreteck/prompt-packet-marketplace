@@ -117,7 +117,7 @@ export default function ProductPage({
                 {pack.description}
               </p>
               <div style={{ marginTop: "4px" }}>
-                <CreatorPreview name={pack.sellerName} dark />
+                <CreatorPreview name={pack.sellerName} dark onClick={() => onOpenCreator(pack.sellerName)} />
               </div>
               <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: "8px" }}>
                 <StatChip tone="gold">

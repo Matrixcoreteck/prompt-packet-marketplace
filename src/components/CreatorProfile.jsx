@@ -1,6 +1,6 @@
 import React from "react";
 import { FONT_DISPLAY, FONT_MONO, FONT_SANS, COLORS } from "../theme";
-import { creatorProfile, formatSales } from "../data/marketplace";
+import { buildCreator, formatSales } from "../data/marketplace";
 import { CreatorAvatar, SectionHeading, BackButton } from "./ui";
 import ProductCard from "./ProductCard";
 
@@ -22,16 +22,11 @@ function StatChip({ children, tone = "dim" }) {
   );
 }
 
-// A minimal creator profile view — structured so a full Creator Profile
-// (followers, payouts, about pages) can grow on top of it later.
+// Public creator storefront. Built on the lightweight buildCreator() model
+// so real creator accounts (avatars, followers, payouts…) can replace it later
+// without changing this page's contract.
 export default function CreatorProfile({ name, packs, owned, onOpenProduct, onBack }) {
-  const profile = creatorProfile(name);
-  const products = packs.filter((p) => p.sellerName === name);
-  const rated = products.filter((p) => p.stats?.rating != null);
-  const avgRating = rated.length
-    ? (rated.reduce((s, p) => s + p.stats.rating, 0) / rated.length).toFixed(1)
-    : null;
-  const totalSales = products.reduce((s, p) => s + (p.stats?.salesCount || 0), 0);
+  const creator = buildCreator(name, packs || []);
 
   return (
     <div>
@@ -39,7 +34,7 @@ export default function CreatorProfile({ name, packs, owned, onOpenProduct, onBa
         <div className="max-w-[1100px] mx-auto">
           <BackButton onClick={onBack} />
           <div className="flex items-center gap-4 mt-6 flex-wrap">
-            <CreatorAvatar name={name} size={64} />
+            <CreatorAvatar name={creator.name} size={64} />
             <div>
               <div style={{ fontFamily: FONT_MONO, fontSize: "10.5px", letterSpacing: "0.18em", color: COLORS.goldDim }}>
                 CREATOR
@@ -54,7 +49,7 @@ export default function CreatorProfile({ name, packs, owned, onOpenProduct, onBa
                   lineHeight: 1.15,
                 }}
               >
-                {name}
+                {creator.name}
               </h1>
             </div>
           </div>
@@ -69,27 +64,39 @@ export default function CreatorProfile({ name, packs, owned, onOpenProduct, onBa
               marginBottom: 0,
             }}
           >
-            {profile.description}
+            {creator.description}
           </p>
           <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: "12px" }}>
+            {creator.rating != null ? (
+              <StatChip tone="gold">★ {creator.rating.toFixed(1)} RATING</StatChip>
+            ) : (
+              <StatChip tone="gold">NEW CREATOR</StatChip>
+            )}
             <StatChip>
-              {products.length} {products.length === 1 ? "PRODUCT" : "PRODUCTS"}
+              {creator.productCount} {creator.productCount === 1 ? "PRODUCT" : "PRODUCTS"}
             </StatChip>
-            {avgRating && <StatChip tone="gold">★ {avgRating} AVG RATING</StatChip>}
-            <StatChip>{formatSales(totalSales)} TOTAL SALES</StatChip>
+            <StatChip>{formatSales(creator.sales)} SALES</StatChip>
           </div>
         </div>
       </div>
 
       <div className="px-6 md:px-10 py-10 max-w-[1100px] mx-auto">
-        <SectionHeading kicker="FROM THIS CREATOR" title="Products" />
-        {products.length === 0 ? (
+        <SectionHeading
+          kicker="THE STOREFRONT"
+          title="Products by This Creator"
+          right={
+            <span style={{ fontFamily: FONT_MONO, fontSize: "11px", letterSpacing: "0.05em", color: COLORS.textOnInkDim }}>
+              {creator.productCount} {creator.productCount === 1 ? "ITEM" : "ITEMS"}
+            </span>
+          }
+        />
+        {creator.productCount === 0 ? (
           <p style={{ fontFamily: FONT_SANS, fontSize: "13.5px", color: COLORS.textOnInkDim }}>
             This creator hasn't published anything yet.
           </p>
         ) : (
           <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}>
-            {products.map((p) => (
+            {creator.products.map((p) => (
               <ProductCard key={p.id} pack={p} owned={owned.has(p.id)} onOpen={onOpenProduct} />
             ))}
           </div>

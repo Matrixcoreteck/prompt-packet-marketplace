@@ -208,6 +208,38 @@ export function creatorProfile(name) {
   };
 }
 
+export function creatorInitials(name) {
+  return (name || "?")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w[0].toUpperCase())
+    .slice(0, 2)
+    .join("");
+}
+
+// Lightweight creator model derived from the products it owns.
+// Ready to be replaced by real creator accounts later — until then,
+// stats are computed live from the catalog so newly published products
+// (Sell a pack) and any creator appear automatically.
+export function buildCreator(name, packs) {
+  const products = packs.filter((p) => p.sellerName === name);
+  const rated = products.filter((p) => p.stats?.rating != null);
+  const avgRating = rated.length
+    ? rated.reduce((s, p) => s + p.stats.rating, 0) / rated.length
+    : null;
+  const totalSales = products.reduce((s, p) => s + (p.stats?.salesCount || 0), 0);
+  return {
+    id: `creator-${name}`,
+    name,
+    initials: creatorInitials(name),
+    description: creatorProfile(name).description,
+    rating: avgRating != null ? Number(avgRating.toFixed(1)) : null,
+    sales: totalSales,
+    productCount: products.length,
+    products,
+  };
+}
+
 // Fill in defaults for products that predate the stats/type/reviews fields
 // (e.g. packs loaded from storage or created before this upgrade).
 export function normalizePack(p) {

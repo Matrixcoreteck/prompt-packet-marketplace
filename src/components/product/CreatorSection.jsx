@@ -18,7 +18,11 @@ export default function CreatorSection({ pack, allPacks, onOpenCreator }) {
         className="flex items-center justify-between gap-4 flex-wrap p-6"
         style={{ background: COLORS.inkRaised, borderRadius: "3px" }}
       >
-        <div className="flex items-center gap-4 min-w-0">
+        <div
+          className="flex items-center gap-4 min-w-0"
+          onClick={() => onOpenCreator(pack.sellerName)}
+          style={{ cursor: "pointer" }}
+        >
           <CreatorAvatar name={pack.sellerName} size={48} />
           <div className="min-w-0">
             <div style={{ fontFamily: FONT_DISPLAY, fontSize: "18px", fontWeight: 600, color: COLORS.textOnInk }}>
