@@ -32,11 +32,19 @@ export function usePacks() {
     load();
   }, [load]);
 
+  // Creates a product, or — when `editSourceId` is set (editing a published
+  // product from the creator dashboard) — updates that product in place.
   const addPack = async (pack) => {
-    const id = "pack-" + Date.now();
-    const record = normalizePack({ ...pack, id });
+    const { editSourceId, ...rest } = pack || {};
+    const id = editSourceId || "pack-" + Date.now();
+    const record = normalizePack({ ...rest, id });
     await window.storage.set("pack:" + id, JSON.stringify(record), true);
-    setPacks((prev) => [record, ...(prev || [])]);
+    setPacks((prev) => {
+      const list = prev || [];
+      return list.some((p) => p.id === id)
+        ? list.map((p) => (p.id === id ? record : p))
+        : [record, ...list];
+    });
     return record;
   };
 

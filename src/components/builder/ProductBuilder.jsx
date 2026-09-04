@@ -25,6 +25,26 @@ const emptyDraft = () => ({
   prompts: [newPrompt()],
 });
 
+// Seed the builder from an existing published product (dashboard EDIT).
+// Publishing with `sourceId` updates that product in place.
+function seedDraftFromPack(p) {
+  const prompts = (p.prompts || []).map((text, i) => ({
+    id: `p-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
+    name: p.promptMeta?.[i]?.name || "",
+    type: p.promptMeta?.[i]?.type || "prompt",
+    text,
+  }));
+  return {
+    title: p.title || "",
+    description: p.description || "",
+    category: p.category || CATEGORY_GROUPS[GROUP_NAMES[0]][0],
+    price: p.price != null ? String(p.price) : "",
+    sellerName: p.sellerName || "",
+    sourceId: p.id,
+    prompts: prompts.length ? prompts : [newPrompt()],
+  };
+}
+
 function StepHeader({ number, label, right }) {
   return (
     <div className="flex items-center justify-between gap-2 flex-wrap" style={{ marginBottom: "14px" }}>
@@ -59,7 +79,7 @@ const labelStyle = {
 // preview the real product page, save a draft, publish to the marketplace.
 // Drafts live under "draft:" in storage (personal scope) — the marketplace
 // only ever reads "pack:", so drafts never appear publicly.
-export default function ProductBuilder({ packs, owned, onPublish, onOpenProduct, onOpenCreator }) {
+export default function ProductBuilder({ packs, owned, initialPack, onPublish, onOpenProduct, onOpenCreator }) {
   const [draft, setDraft] = useState(emptyDraft);
   const [draftLoaded, setDraftLoaded] = useState(false);
   const [errors, setErrors] = useState([]);
@@ -68,9 +88,15 @@ export default function ProductBuilder({ packs, owned, onPublish, onOpenProduct,
   const [mode, setMode] = useState("edit"); // edit | preview | published
   const [published, setPublished] = useState(null);
 
-  // Restore an unfinished draft when the creator returns.
+  // When opened for EDIT, seed from the published product. Otherwise
+  // restore an unfinished draft when the creator returns.
   useEffect(() => {
     (async () => {
+      if (initialPack) {
+        setDraft(seedDraftFromPack(initialPack));
+        setDraftLoaded(true);
+        return;
+      }
       try {
         const res = await window.storage.get(DRAFT_KEY, false);
         if (res && res.value) {
@@ -84,7 +110,7 @@ export default function ProductBuilder({ packs, owned, onPublish, onOpenProduct,
       }
       setDraftLoaded(true);
     })();
-  }, []);
+  }, [initialPack]);
 
   const promptItems = useMemo(
     () =>
@@ -157,11 +183,14 @@ export default function ProductBuilder({ packs, owned, onPublish, onOpenProduct,
         type: productType,
         status: "published",
         createdAt: Date.now(),
+        editSourceId: draft.sourceId || undefined,
       });
-      try {
-        await window.storage.delete(DRAFT_KEY, false);
-      } catch {
-        /* ignore */
+      if (!draft.sourceId) {
+        try {
+          await window.storage.delete(DRAFT_KEY, false);
+        } catch {
+          /* ignore */
+        }
       }
       setPublished(record);
       setMode("published");
@@ -281,7 +310,12 @@ export default function ProductBuilder({ packs, owned, onPublish, onOpenProduct,
           Build a useful AI product, preview exactly what buyers will see, then publish it to
           The Prompt Index. Sell the same product over and over — creators keep most of the revenue.
         </p>
-        {draftLoaded && draft.prompts.some((p) => p.text || p.name) && (
+        {draft.sourceId && (
+          <span style={{ fontFamily: FONT_MONO, fontSize: "10.5px", color: COLORS.goldDim }}>
+            EDITING A PUBLISHED PRODUCT — PUBLISHING UPDATES IT IN PLACE.
+          </span>
+        )}
+        {!draft.sourceId && draftLoaded && draft.prompts.some((p) => p.text || p.name) && (
           <span style={{ fontFamily: FONT_MONO, fontSize: "10.5px", color: COLORS.textOnInkDim }}>
             DRAFT RESTORED — CONTINUE WHERE YOU LEFT OFF.
           </span>

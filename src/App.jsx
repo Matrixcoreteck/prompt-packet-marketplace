@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Store, Plus, Library as LibraryIcon, Search as SearchIcon } from "lucide-react";
+import { Store, Plus, Library as LibraryIcon, Search as SearchIcon, LayoutGrid } from "lucide-react";
 import { FONT_DISPLAY, FONT_SANS, FONT_MONO, COLORS, GROUP_NAMES, CATEGORY_GROUPS, groupOf } from "./theme";
 import { usePacks } from "./hooks/usePacks";
 import { usePurchases } from "./hooks/usePurchases";
@@ -11,6 +11,7 @@ import ProductPage from "./components/ProductPage";
 import CreatorProfile from "./components/CreatorProfile";
 import ProductBuilder from "./components/builder/ProductBuilder";
 import LibraryView from "./components/Library";
+import CreatorDashboard from "./components/dashboard/CreatorDashboard";
 import { SectionHeading } from "./components/ui";
 
 export default function App() {
@@ -23,6 +24,8 @@ export default function App() {
   const [selectedId, setSelectedId] = useState(null);
   const [creatorName, setCreatorName] = useState(null);
   const [purchasing, setPurchasing] = useState(false);
+  const [dashboardCreator, setDashboardCreator] = useState("Spark Tools AI");
+  const [editingPack, setEditingPack] = useState(null);
 
   const switchView = (v) => {
     setView(v);
@@ -72,9 +75,20 @@ export default function App() {
     setPurchasing(false);
   };
 
+  // Publishing makes that creator the dashboard's active creator, so new
+  // products automatically show up in their dashboard and storefront.
+  const publishPack = async (pack) => {
+    const record = await addPack(pack);
+    setDashboardCreator(record.sellerName);
+    return record;
+  };
+
   const navBtn = (key, label, Icon) => (
     <button
-      onClick={() => switchView(key)}
+      onClick={() => {
+        if (key === "sell") setEditingPack(null);
+        switchView(key);
+      }}
       className="flex items-center gap-2 px-3 py-2"
       style={{
         fontFamily: FONT_SANS,
@@ -107,6 +121,7 @@ export default function App() {
         <div className="flex items-center gap-1">
           {navBtn("browse", "Browse", Store)}
           {navBtn("library", `Library (${myLibrary.length})`, LibraryIcon)}
+          {navBtn("dashboard", "Dashboard", LayoutGrid)}
           {navBtn("sell", "Sell a pack", Plus)}
         </div>
       </div>
@@ -293,9 +308,33 @@ export default function App() {
         <ProductBuilder
           packs={packs || []}
           owned={owned}
-          onPublish={addPack}
+          initialPack={editingPack}
+          onPublish={publishPack}
           onOpenProduct={openProduct}
           onOpenCreator={openCreator}
+        />
+      )}
+
+      {view === "dashboard" && (
+        <CreatorDashboard
+          packs={packs || []}
+          creator={dashboardCreator}
+          onCreatorChange={setDashboardCreator}
+          onOpenProduct={openProduct}
+          onOpenCreator={openCreator}
+          onBrowse={() => switchView("browse")}
+          onCreate={() => {
+            setEditingPack(null);
+            switchView("sell");
+          }}
+          onEdit={(pack) => {
+            setEditingPack(pack);
+            switchView("sell");
+          }}
+          onEditDraft={() => {
+            setEditingPack(null);
+            switchView("sell");
+          }}
         />
       )}
     </div>
