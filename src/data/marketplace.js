@@ -243,11 +243,32 @@ export function buildCreator(name, packs) {
 // Fill in defaults for products that predate the stats/type/reviews fields
 // (e.g. packs loaded from storage or created before this upgrade).
 export function normalizePack(p) {
+  // Prompts stay plain strings for compatibility with everything that
+  // already works (product page, sample generator, counts). Builder-created
+  // products also carry an optional `promptMeta` array ({ name, type }) that
+  // aligns by index — products without it render exactly as before.
+  const prompts = (Array.isArray(p.prompts) ? p.prompts : [])
+    .map((x) => (typeof x === "string" ? x : x?.text || ""))
+    .filter((t) => typeof t === "string" && t.trim());
+  let promptMeta;
+  if (Array.isArray(p.promptMeta)) {
+    promptMeta = prompts.map((_, i) => {
+      const m = p.promptMeta[i] || {};
+      return {
+        name: (typeof m === "object" && m.name) || "",
+        type: (typeof m === "object" && m.type) || "prompt",
+      };
+    });
+  }
   return {
     type: "Prompt Pack",
+    status: "published",
     ...p,
+    prompts,
+    promptMeta,
     stats: { rating: null, ratingCount: 0, salesCount: 0, ...(p.stats || {}) },
     reviews: Array.isArray(p.reviews) ? p.reviews : [],
+    createdAt: p.createdAt || null,
   };
 }
 

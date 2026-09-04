@@ -54,7 +54,7 @@ function CopyButton({ text }) {
   );
 }
 
-function PromptCard({ prompt, index, showCopy }) {
+function PromptCard({ prompt, index, showCopy, meta }) {
   return (
     <div
       className="flex items-start justify-between gap-3 p-4 md:p-5"
@@ -65,22 +65,30 @@ function PromptCard({ prompt, index, showCopy }) {
         boxShadow: "2px 3px 0 rgba(16,21,31,0.35)",
       }}
     >
-      <div className="flex items-start gap-3 min-w-0">
+      <div className="flex items-start gap-3 min-w-0 flex-1">
         <span style={{ fontFamily: FONT_MONO, fontSize: "11px", color: COLORS.goldDim, paddingTop: "2px" }}>
           {String(index + 1).padStart(2, "0")}
         </span>
-        <span
-          className="min-w-0"
-          style={{
-            fontFamily: FONT_MONO,
-            fontSize: "12.5px",
-            color: COLORS.textOnPaper,
-            lineHeight: 1.6,
-            whiteSpace: "pre-wrap",
-          }}
-        >
-          {prompt}
-        </span>
+        <div className="flex flex-col gap-1 min-w-0">
+          {meta?.name ? (
+            <span style={{ fontFamily: FONT_MONO, fontSize: "10px", letterSpacing: "0.08em", color: COLORS.goldDim }}>
+              {meta.name.toUpperCase()}
+              {meta.type && meta.type !== "prompt" ? ` · ${meta.type.toUpperCase()}` : ""}
+            </span>
+          ) : null}
+          <span
+            className="min-w-0"
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: "12.5px",
+              color: COLORS.textOnPaper,
+              lineHeight: 1.6,
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {prompt}
+          </span>
+        </div>
       </div>
       {showCopy && <CopyButton text={prompt} />}
     </div>
@@ -139,7 +147,7 @@ export default function WhatsInside({ pack, owned }) {
       />
       <div className="flex flex-col gap-2.5">
         {visible.map((p, i) => (
-          <PromptCard key={i} prompt={p} index={i} showCopy={owned} />
+          <PromptCard key={i} prompt={p} index={i} showCopy={owned} meta={pack.promptMeta?.[i]} />
         ))}
         {locked.map((p, i) => (
           <LockedCard key={i} prompt={p} />

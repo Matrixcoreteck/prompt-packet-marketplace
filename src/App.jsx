@@ -9,7 +9,7 @@ import CategorySection from "./components/CategorySection";
 import ProductCard from "./components/ProductCard";
 import ProductPage from "./components/ProductPage";
 import CreatorProfile from "./components/CreatorProfile";
-import SellView from "./components/SellView";
+import ProductBuilder from "./components/builder/ProductBuilder";
 import LibraryView from "./components/Library";
 import { SectionHeading } from "./components/ui";
 
@@ -290,12 +290,12 @@ export default function App() {
       )}
 
       {view === "sell" && (
-        <SellView
-          onSubmit={addPack}
-          onDone={() => {
-            setView("browse");
-            setTimeout(scrollToCatalog, 50);
-          }}
+        <ProductBuilder
+          packs={packs || []}
+          owned={owned}
+          onPublish={addPack}
+          onOpenProduct={openProduct}
+          onOpenCreator={openCreator}
         />
       )}
     </div>
