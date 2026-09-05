@@ -7,8 +7,6 @@ import PromptEditorCard from "./PromptEditorCard";
 import BuilderSummary from "./BuilderSummary";
 import PublishSuccess from "./PublishSuccess";
 
-const DRAFT_KEY = "draft:product";
-
 const newPrompt = () => ({
   id: `p-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
   name: "",
@@ -16,12 +14,12 @@ const newPrompt = () => ({
   text: "",
 });
 
-const emptyDraft = () => ({
+const emptyDraft = (creatorName) => ({
   title: "",
   description: "",
   category: CATEGORY_GROUPS[GROUP_NAMES[0]][0],
   price: "",
-  sellerName: "",
+  sellerName: creatorName || "",
   prompts: [newPrompt()],
 });
 
@@ -77,10 +75,13 @@ const labelStyle = {
 
 // The creator product builder: enter product info, build prompts,
 // preview the real product page, save a draft, publish to the marketplace.
-// Drafts live under "draft:" in storage (personal scope) — the marketplace
-// only ever reads "pack:", so drafts never appear publicly.
-export default function ProductBuilder({ packs, owned, initialPack, onPublish, onOpenProduct, onOpenCreator }) {
-  const [draft, setDraft] = useState(emptyDraft);
+// Drafts live under "draft:product:<userId>" (personal scope, per account) —
+// the marketplace only ever reads "pack:", so drafts never appear publicly.
+// The creator name is entered once on the first product; after that it's
+// locked to the account so the creator never retypes their identity.
+export default function ProductBuilder({ packs, owned, user, initialPack, onPublish, onOpenProduct, onOpenCreator }) {
+  const draftKey = user?.id ? `draft:product:${user.id}` : "draft:product";
+  const [draft, setDraft] = useState(() => emptyDraft(user?.creatorName || ""));
   const [draftLoaded, setDraftLoaded] = useState(false);
   const [errors, setErrors] = useState([]);
   const [savedFlash, setSavedFlash] = useState(false);
@@ -98,11 +99,17 @@ export default function ProductBuilder({ packs, owned, initialPack, onPublish, o
         return;
       }
       try {
-        const res = await window.storage.get(DRAFT_KEY, false);
+        const res = await window.storage.get(draftKey, false);
         if (res && res.value) {
           const d = JSON.parse(res.value);
           if (d && Array.isArray(d.prompts) && d.prompts.length) {
-            setDraft({ ...emptyDraft(), ...d, prompts: d.prompts.map((p) => ({ ...newPrompt(), ...p })) });
+            setDraft({
+              ...emptyDraft(user?.creatorName),
+              ...d,
+              // Once the creator identity is locked to the account, it wins.
+              ...(user?.creatorName ? { sellerName: user.creatorName } : {}),
+              prompts: d.prompts.map((p) => ({ ...newPrompt(), ...p })),
+            });
           }
         }
       } catch {
@@ -110,7 +117,7 @@ export default function ProductBuilder({ packs, owned, initialPack, onPublish, o
       }
       setDraftLoaded(true);
     })();
-  }, [initialPack]);
+  }, [initialPack, draftKey, user?.creatorName]);
 
   const promptItems = useMemo(
     () =>
@@ -155,7 +162,7 @@ export default function ProductBuilder({ packs, owned, initialPack, onPublish, o
 
   const saveDraft = async () => {
     try {
-      await window.storage.set(DRAFT_KEY, JSON.stringify(draft), false);
+      await window.storage.set(draftKey, JSON.stringify(draft), false);
       setSavedFlash(true);
       setTimeout(() => setSavedFlash(false), 1600);
     } catch {
@@ -187,7 +194,7 @@ export default function ProductBuilder({ packs, owned, initialPack, onPublish, o
       });
       if (!draft.sourceId) {
         try {
-          await window.storage.delete(DRAFT_KEY, false);
+          await window.storage.delete(draftKey, false);
         } catch {
           /* ignore */
         }
@@ -201,7 +208,7 @@ export default function ProductBuilder({ packs, owned, initialPack, onPublish, o
   };
 
   const resetBuilder = () => {
-    setDraft(emptyDraft());
+    setDraft(emptyDraft(user?.creatorName));
     setErrors([]);
     setMode("edit");
     setPublished(null);
@@ -405,12 +412,30 @@ export default function ProductBuilder({ packs, owned, initialPack, onPublish, o
               </div>
               <div className="flex flex-col gap-1">
                 <label style={labelStyle}>CREATOR NAME</label>
-                <input
-                  style={inputStyle}
-                  value={draft.sellerName}
-                  onChange={(e) => setField("sellerName", e.target.value)}
-                  placeholder="How buyers will see you"
-                />
+                {user?.creatorName ? (
+                  <>
+                    <input
+                      style={{ ...inputStyle, opacity: 0.7, cursor: "default" }}
+                      value={draft.sellerName}
+                      readOnly
+                    />
+                    <span style={{ fontFamily: FONT_MONO, fontSize: "9.5px", letterSpacing: "0.08em", color: COLORS.goldDim }}>
+                      LINKED TO YOUR ACCOUNT — PUBLISHING AS {user.creatorName.toUpperCase()}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <input
+                      style={inputStyle}
+                      value={draft.sellerName}
+                      onChange={(e) => setField("sellerName", e.target.value)}
+                      placeholder="How buyers will see you"
+                    />
+                    <span style={{ fontFamily: FONT_MONO, fontSize: "9.5px", letterSpacing: "0.08em", color: COLORS.textOnInkDim }}>
+                      SET ONCE — THIS BECOMES YOUR CREATOR IDENTITY ON YOUR FIRST PRODUCT.
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           </section>

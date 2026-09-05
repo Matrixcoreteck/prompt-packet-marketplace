@@ -71,10 +71,15 @@ function QuickAction({ icon: Icon, label, onClick, primary }) {
 // The creator's home base: products, demo performance, and quick actions.
 // All figures are DEMO values derived from the demo product stats —
 // structured so real sales/earnings can replace them later.
+//
+// The dashboard is scoped to the signed-in creator: only their own
+// products and their own draft are visible here. The public storefront
+// (by creator name) stays open to everyone.
 export default function CreatorDashboard({
   packs,
   creator,
-  onCreatorChange,
+  creatorUserId,
+  userId,
   onOpenProduct,
   onOpenCreator,
   onBrowse,
@@ -84,26 +89,30 @@ export default function CreatorDashboard({
 }) {
   const [draft, setDraft] = useState(null);
 
-  // The single builder draft lives under "draft:" (personal scope) —
-  // it never appears in the public marketplace, only here.
+  // This creator's builder draft lives under "draft:product:<userId>"
+  // (personal scope) — it never appears in the public marketplace, only here.
+  const draftKey = `draft:product:${userId}`;
   useEffect(() => {
     (async () => {
       try {
-        const res = await window.storage.get("draft:product", false);
+        const res = await window.storage.get(draftKey, false);
         if (res && res.value) setDraft(JSON.parse(res.value));
       } catch {
         /* no draft */
       }
     })();
-  }, []);
+  }, [draftKey]);
 
-  const published = useMemo(() => packs.filter((p) => p.sellerName === creator), [packs, creator]);
-  const hasDraft = Boolean(draft && ((!draft.sellerName || !draft.sellerName.trim()) || draft.sellerName === creator));
-  const creators = useMemo(() => {
-    const names = [...new Set([...packs.map((p) => p.sellerName), creator])];
-    if (draft?.sellerName?.trim() && !names.includes(draft.sellerName)) names.push(draft.sellerName);
-    return names.filter(Boolean);
-  }, [packs, creator, draft]);
+  // Ownership: products created by this account, plus products published
+  // before accounts existed under the same creator name.
+  const published = useMemo(
+    () =>
+      packs.filter(
+        (p) => p.creatorUserId === creatorUserId || (creator && p.sellerName === creator)
+      ),
+    [packs, creator, creatorUserId]
+  );
+  const hasDraft = Boolean(draft);
 
   const stats = useMemo(() => {
     const sales = published.reduce((s, p) => s + (p.stats?.salesCount || 0), 0);
@@ -112,34 +121,6 @@ export default function CreatorDashboard({
     const rating = rated.length ? rated.reduce((s, p) => s + p.stats.rating, 0) / rated.length : null;
     return { sales, earnings, rating };
   }, [published]);
-
-  const switcher = (
-    <div className="flex items-center gap-2">
-      <span style={{ fontFamily: FONT_MONO, fontSize: "9.5px", letterSpacing: "0.14em", color: COLORS.textOnInkDim }}>
-        VIEWING AS
-      </span>
-      <select
-        value={creator}
-        onChange={(e) => onCreatorChange(e.target.value)}
-        style={{
-          fontFamily: FONT_MONO,
-          fontSize: "11.5px",
-          color: COLORS.textOnInk,
-          background: COLORS.inkRaised,
-          border: `1px solid ${COLORS.ink}`,
-          borderRadius: "2px",
-          padding: "5px 8px",
-          cursor: "pointer",
-        }}
-      >
-        {creators.map((name) => (
-          <option key={name} value={name}>
-            {name}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
 
   // Empty state: no products and no draft — no meaningless statistics.
   if (published.length === 0 && !hasDraft) {
@@ -186,7 +167,6 @@ export default function CreatorDashboard({
           >
             <Plus size={15} /> Create your first product
           </button>
-          <div style={{ marginTop: "8px" }}>{switcher}</div>
         </div>
       </div>
     );
@@ -215,7 +195,6 @@ export default function CreatorDashboard({
           <p style={{ fontFamily: FONT_SANS, fontSize: "13.5px", color: COLORS.textOnInkDim, margin: 0, lineHeight: 1.6 }}>
             Manage your AI products, track sales, and grow your storefront.
           </p>
-          {switcher}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button
