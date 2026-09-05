@@ -1,5 +1,5 @@
 import React from "react";
-import { Check } from "lucide-react";
+import { Check, Bookmark } from "lucide-react";
 import { FONT_DISPLAY, FONT_MONO, FONT_SANS, COLORS } from "../theme";
 import { formatSales, countLabel } from "../data/marketplace";
 import { Tag_, SectionHeading, BackButton } from "./ui";
@@ -26,6 +26,30 @@ function StatChip({ children, tone = "dim" }) {
     >
       {children}
     </span>
+  );
+}
+
+function FavoriteBar({ isFavorite, onToggle }) {
+  return (
+    <button
+      onClick={onToggle}
+      className="flex items-center justify-center gap-2 w-full"
+      style={{
+        fontFamily: FONT_MONO,
+        fontSize: "12px",
+        fontWeight: 600,
+        letterSpacing: "0.06em",
+        color: isFavorite ? COLORS.paper : COLORS.goldDim,
+        background: isFavorite ? COLORS.oxblood : "transparent",
+        border: `1px solid ${isFavorite ? COLORS.oxblood : COLORS.goldDim}`,
+        borderRadius: "2px",
+        padding: "11px 16px",
+        cursor: "pointer",
+      }}
+    >
+      <Bookmark size={14} fill={isFavorite ? COLORS.paper : "none"} />
+      {isFavorite ? "SAVED" : "SAVE"}
+    </button>
   );
 }
 
@@ -59,14 +83,18 @@ export default function ProductPage({
   pack,
   allPacks,
   owned,
+  favorites,
+  onToggleFavorite,
   purchasing,
   onBack,
   onPurchase,
   onOpenProduct,
   onOpenCreator,
+  onOpenInLibrary,
 }) {
   const stats = pack.stats || {};
   const isOwned = owned.has(pack.id);
+  const isFavorite = favorites ? favorites.has(pack.id) : false;
 
   return (
     <div>
@@ -129,8 +157,18 @@ export default function ProductPage({
                 </StatChip>
               </div>
             </div>
-            <div style={{ flex: "1 1 340px", maxWidth: "420px" }}>
-              <PurchaseCard pack={pack} owned={isOwned} purchasing={purchasing} onPurchase={onPurchase} />
+            <div style={{ flex: "1 1 340px", maxWidth: "420px" }} className="flex flex-col gap-3">
+              <PurchaseCard
+                pack={pack}
+                owned={isOwned}
+                purchasing={purchasing}
+                onPurchase={onPurchase}
+                onOpenInLibrary={onOpenInLibrary}
+              />
+              <FavoriteBar
+                isFavorite={isFavorite}
+                onToggle={() => onToggleFavorite && onToggleFavorite(pack.id)}
+              />
             </div>
           </div>
         </div>

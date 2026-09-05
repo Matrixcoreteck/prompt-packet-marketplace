@@ -1,9 +1,9 @@
 import React from "react";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, BookOpen } from "lucide-react";
 import { FONT_MONO, FONT_SANS, FONT_DISPLAY, COLORS } from "../../theme";
 import { countLabel } from "../../data/marketplace";
 
-export default function PurchaseCard({ pack, owned, purchasing, onPurchase }) {
+export default function PurchaseCard({ pack, owned, purchasing, onPurchase, onOpenInLibrary }) {
   return (
     <div
       className="flex flex-col gap-3 p-6"
@@ -20,19 +20,41 @@ export default function PurchaseCard({ pack, owned, purchasing, onPurchase }) {
       </p>
 
       {owned ? (
-        <div
-          className="flex items-center justify-center gap-2 w-full"
-          style={{
-            border: `1px solid ${COLORS.goldDim}`,
-            color: COLORS.gold,
-            borderRadius: "2px",
-            padding: "13px 16px",
-            fontFamily: FONT_SANS,
-            fontSize: "14px",
-            fontWeight: 600,
-          }}
-        >
-          <Check size={16} /> IN YOUR LIBRARY
+        <div className="flex flex-col gap-2 w-full">
+          <div
+            className="flex items-center justify-center gap-2 w-full"
+            style={{
+              border: `1px solid ${COLORS.goldDim}`,
+              color: COLORS.gold,
+              borderRadius: "2px",
+              padding: "13px 16px",
+              fontFamily: FONT_SANS,
+              fontSize: "14px",
+              fontWeight: 600,
+            }}
+          >
+            <Check size={16} /> OWNED
+          </div>
+          {onOpenInLibrary && (
+            <button
+              onClick={onOpenInLibrary}
+              className="flex items-center justify-center gap-2 w-full"
+              style={{
+                fontFamily: FONT_MONO,
+                fontSize: "12px",
+                fontWeight: 600,
+                letterSpacing: "0.06em",
+                color: COLORS.ink,
+                background: COLORS.gold,
+                border: "none",
+                borderRadius: "2px",
+                padding: "11px 16px",
+                cursor: "pointer",
+              }}
+            >
+              <BookOpen size={14} /> OPEN IN LIBRARY
+            </button>
+          )}
         </div>
       ) : (
         <button

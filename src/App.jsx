@@ -3,6 +3,8 @@ import { Store, Plus, Library as LibraryIcon, Search as SearchIcon, LayoutGrid }
 import { FONT_DISPLAY, FONT_SANS, FONT_MONO, COLORS, GROUP_NAMES, CATEGORY_GROUPS, groupOf } from "./theme";
 import { usePacks } from "./hooks/usePacks";
 import { usePurchases } from "./hooks/usePurchases";
+import { useFavorites } from "./hooks/useFavorites";
+import { useRecentlyViewed } from "./hooks/useRecentlyViewed";
 import Hero from "./components/Hero";
 import FeaturedProducts from "./components/FeaturedProducts";
 import CategorySection from "./components/CategorySection";
@@ -16,7 +18,9 @@ import { SectionHeading } from "./components/ui";
 
 export default function App() {
   const { packs, addPack, error: packsError } = usePacks();
-  const { owned, purchase } = usePurchases();
+  const { owned, records: purchaseRecords, purchase } = usePurchases();
+  const { favorites, toggleFavorite } = useFavorites();
+  const { recentIds, markViewed } = useRecentlyViewed();
   const [view, setView] = useState("browse"); // browse | sell | library | product | creator
   const [query, setQuery] = useState("");
   const [activeGroup, setActiveGroup] = useState("All");
@@ -39,7 +43,13 @@ export default function App() {
 
   const openProduct = (pack) => {
     setSelectedId(pack.id);
+    markViewed(pack.id);
     switchView("product");
+  };
+
+  const openLibrary = () => {
+    setSelectedId(null);
+    switchView("library");
   };
 
   const openCreator = (name) => {
@@ -71,7 +81,8 @@ export default function App() {
   const handlePurchase = async (packId) => {
     setPurchasing(true);
     await new Promise((r) => setTimeout(r, 500));
-    await purchase(packId);
+    const pack = (packs || []).find((p) => p.id === packId);
+    await purchase(packId, pack ? pack.price : null);
     setPurchasing(false);
   };
 
@@ -277,11 +288,14 @@ export default function App() {
           pack={selectedPack}
           allPacks={packs || []}
           owned={owned}
+          favorites={favorites}
+          onToggleFavorite={toggleFavorite}
           purchasing={purchasing}
           onBack={() => switchView("browse")}
           onPurchase={handlePurchase}
           onOpenProduct={openProduct}
           onOpenCreator={openCreator}
+          onOpenInLibrary={openLibrary}
         />
       )}
 
@@ -299,8 +313,12 @@ export default function App() {
         <LibraryView
           packs={packs || []}
           owned={owned}
+          purchaseRecords={purchaseRecords}
+          favorites={favorites}
+          recentIds={recentIds}
           onOpen={openProduct}
           onBrowse={() => switchView("browse")}
+          onToggleFavorite={toggleFavorite}
         />
       )}
 
