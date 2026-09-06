@@ -41,14 +41,16 @@ export function Stars({ rating }) {
   );
 }
 
-export function CreatorAvatar({ name, size = 22 }) {
-  const initials = (name || "?")
-    .split(/\s+/)
-    .map((w) => w[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+export function CreatorAvatar({ name, size = 22, initials: initialsOverride }) {
+  const initials =
+    (initialsOverride || "").trim() ||
+    (name || "?")
+      .split(/\s+/)
+      .map((w) => w[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
   return (
     <span
       className="inline-flex items-center justify-center"

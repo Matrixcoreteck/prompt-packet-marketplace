@@ -19,11 +19,24 @@ import AuthPage from "./components/auth/AuthPage";
 import AccountMenu from "./components/auth/AccountMenu";
 import AuthPrompt from "./components/AuthPrompt";
 import ProfilePage from "./components/ProfilePage";
+import SettingsPage from "./components/SettingsPage";
+import BecomeCreator from "./components/creator/BecomeCreator";
+import CreatorProfileForm from "./components/creator/CreatorProfileForm";
 import { SectionHeading } from "./components/ui";
 
 // Pages that require an account. Everything else — marketplace, search,
 // categories, product pages, public creator storefronts — stays open.
-const PROTECTED_VIEWS = ["library", "dashboard", "sell", "profile"];
+const PROTECTED_VIEWS = ["library", "dashboard", "sell", "profile", "settings", "becomeCreator", "editCreator"];
+
+// Shown when a logged-out visitor taps a protected destination —
+// after login they land back on what they asked for.
+const LOGIN_NOTICES = {
+  library: "LOG IN TO OPEN YOUR LIBRARY — YOUR PURCHASES AND FAVORITES LIVE THERE.",
+  sell: "LOG IN TO START SELLING — CREATE AN ACCOUNT FIRST.",
+  dashboard: "LOG IN TO OPEN YOUR CREATOR DASHBOARD.",
+  profile: "LOG IN TO ACCESS YOUR PROFILE.",
+  settings: "LOG IN TO ACCESS YOUR SETTINGS.",
+};
 
 export default function App() {
   const {
@@ -35,6 +48,8 @@ export default function App() {
     logOut,
     updateDisplayName,
     setCreatorName: setAccountCreatorName,
+    saveCreatorProfile: saveCreatorProfileAuth,
+    changePassword,
     clearAuthError,
   } = useAuth();
   const userId = user?.id || null;
@@ -56,6 +71,27 @@ export default function App() {
   const [creatorName, setCreatorName] = useState(null);
   const [purchasing, setPurchasing] = useState(false);
   const [editingPack, setEditingPack] = useState(null);
+  const [trackRecent, setTrackRecent] = useState(true);
+
+  // Preference: keep the Library's Recently Viewed shelf recording.
+  useEffect(() => {
+    if (!userId) {
+      setTrackRecent(true);
+      return;
+    }
+    window.storage
+      .get(`pref:${userId}:trackRecent`, false)
+      .then((res) => setTrackRecent(res && res.value === "off" ? false : true))
+      .catch(() => setTrackRecent(true));
+  }, [userId]);
+
+  const toggleTrackRecent = async () => {
+    const next = !trackRecent;
+    setTrackRecent(next);
+    if (userId) {
+      await window.storage.set(`pref:${userId}:trackRecent`, next ? "on" : "off", false);
+    }
+  };
 
   const switchView = (v) => {
     setView(v);
@@ -66,12 +102,37 @@ export default function App() {
   useEffect(() => {
     if (user && view === "login") {
       setLoginNotice("");
-      const dest = authRedirect && authRedirect !== "login" ? authRedirect : "browse";
+      let dest = authRedirect && authRedirect !== "login" ? authRedirect : "browse";
       setAuthRedirect("browse");
+      // Sell is for creators — a buyer who asked to sell starts onboarding.
+      if (dest === "sell" && !user.creatorName) dest = "becomeCreator";
       switchView(dest);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, view]);
+
+  // The builder is creator-only; non-creators land on BECOME A CREATOR.
+  useEffect(() => {
+    if (user && view === "sell" && !user.creatorName) switchView("becomeCreator");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, view]);
+
+  // Nav destination handler: logged-out users asking for private pages go
+  // straight to login and come back after signing in.
+  const navGo = (key) => {
+    if (!user && PROTECTED_VIEWS.includes(key)) {
+      goLogin(LOGIN_NOTICES[key] || "", key);
+      return;
+    }
+    if (key === "sell") {
+      if (user && !isCreator) {
+        switchView("becomeCreator");
+        return;
+      }
+      setEditingPack(null);
+    }
+    switchView(key);
+  };
 
   const goLogin = (notice, redirect) => {
     setLoginNotice(notice || "");
@@ -88,7 +149,7 @@ export default function App() {
 
   const openProduct = (pack) => {
     setSelectedId(pack.id);
-    if (userId) markViewed(pack.id);
+    if (userId && trackRecent) markViewed(pack.id);
     switchView("product");
   };
 
@@ -148,12 +209,24 @@ export default function App() {
     return record;
   };
 
+  // Create or edit the creator profile. On rename, re-point this account's
+  // published products to the new name — same identity, no duplicates.
+  const saveCreatorProfile = async (fields) => {
+    const oldName = user?.creatorName || null;
+    const updated = await saveCreatorProfileAuth(fields);
+    if (!updated) return null;
+    if (oldName && oldName !== updated.creatorName) {
+      const mine = (packs || []).filter((p) => p.creatorUserId === user.id || p.sellerName === oldName);
+      for (const p of mine) {
+        await addPack({ ...p, editSourceId: p.id, sellerName: updated.creatorName, creatorUserId: user.id });
+      }
+    }
+    return updated;
+  };
+
   const navBtn = (key, label, Icon) => (
     <button
-      onClick={() => {
-        if (key === "sell") setEditingPack(null);
-        switchView(key);
-      }}
+      onClick={() => navGo(key)}
       className="flex items-center gap-2 px-3 py-2"
       style={{
         fontFamily: FONT_SANS,
@@ -194,10 +267,10 @@ export default function App() {
             <AccountMenu
               user={user}
               isCreator={isCreator}
-              onLibrary={() => switchView("library")}
+              onLibrary={() => navGo("library")}
               onProfile={() => switchView("profile")}
-              onDashboard={() => switchView("dashboard")}
-              onSettings={() => switchView("profile")}
+              onDashboard={() => navGo("dashboard")}
+              onSettings={() => switchView("settings")}
               onLogOut={async () => {
                 await logOut();
                 switchView("browse");
@@ -477,6 +550,7 @@ export default function App() {
                 setEditingPack(null);
                 switchView("sell");
               }}
+              onEditCreator={() => switchView("editCreator")}
             />
           )}
 
@@ -488,7 +562,66 @@ export default function App() {
               isCreator={isCreator}
               onUpdateDisplayName={updateDisplayName}
               onOpenCreator={openCreator}
+              onBecomeCreator={() => switchView("becomeCreator")}
             />
+          )}
+
+          {view === "settings" && user && (
+            <SettingsPage
+              user={user}
+              trackRecent={trackRecent}
+              onToggleTrackRecent={toggleTrackRecent}
+              onChangePassword={changePassword}
+              onLogOut={async () => {
+                await logOut();
+                switchView("browse");
+              }}
+              onGoProfile={() => switchView("profile")}
+            />
+          )}
+
+          {view === "becomeCreator" && user && !isCreator && (
+            <BecomeCreator
+              user={user}
+              onSaveProfile={saveCreatorProfile}
+              onGoDashboard={() => switchView("dashboard")}
+              onBack={() => switchView("browse")}
+            />
+          )}
+
+          {view === "editCreator" && user && isCreator && (
+            <div className="px-6 md:px-10 py-10" style={{ maxWidth: "640px", margin: "0 auto" }}>
+              <SectionHeading kicker="CREATOR PROFILE" title="Edit Creator Profile" />
+              <p
+                style={{
+                  fontFamily: FONT_SANS,
+                  fontSize: "13.5px",
+                  color: COLORS.textOnInkDim,
+                  lineHeight: 1.65,
+                  margin: "0 0 24px",
+                }}
+              >
+                Saving updates your public storefront. Products you've already published stay
+                linked to this same profile.
+              </p>
+              <CreatorProfileForm mode="edit" user={user} onSave={saveCreatorProfile} />
+              <button
+                onClick={() => switchView("dashboard")}
+                style={{
+                  fontFamily: FONT_MONO,
+                  fontSize: "10.5px",
+                  letterSpacing: "0.08em",
+                  color: COLORS.textOnInkDim,
+                  background: "transparent",
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  marginTop: "18px",
+                }}
+              >
+                ← BACK TO THE CREATOR DASHBOARD
+              </button>
+            </div>
           )}
         </>
       )}

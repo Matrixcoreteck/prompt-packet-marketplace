@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Plus, Store, LayoutGrid, ListChecks, Rocket, DollarSign, Star, Inbox } from "lucide-react";
+import { Plus, Store, LayoutGrid, ListChecks, Rocket, DollarSign, Star, Inbox, UserCog } from "lucide-react";
 import { FONT_DISPLAY, FONT_MONO, FONT_SANS, COLORS } from "../../theme";
 import { formatSales } from "../../data/marketplace";
 import DashboardProducts from "./DashboardProducts";
@@ -86,6 +86,7 @@ export default function CreatorDashboard({
   onCreate,
   onEdit,
   onEditDraft,
+  onEditCreator,
 }) {
   const [draft, setDraft] = useState(null);
 
@@ -167,6 +168,22 @@ export default function CreatorDashboard({
           >
             <Plus size={15} /> Create your first product
           </button>
+          <button
+            onClick={onEditCreator}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5"
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: "11px",
+              letterSpacing: "0.08em",
+              color: COLORS.goldDim,
+              background: "transparent",
+              border: `1px solid ${COLORS.goldDim}`,
+              borderRadius: "2px",
+              cursor: "pointer",
+            }}
+          >
+            EDIT CREATOR PROFILE
+          </button>
         </div>
       </div>
     );
@@ -212,6 +229,22 @@ export default function CreatorDashboard({
             }}
           >
             <Plus size={15} /> Create new product
+          </button>
+          <button
+            onClick={onEditCreator}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5"
+            style={{
+              fontFamily: FONT_SANS,
+              fontSize: "13.5px",
+              fontWeight: 600,
+              color: COLORS.textOnInk,
+              background: COLORS.inkRaised,
+              border: `1px solid ${COLORS.ink}`,
+              borderRadius: "2px",
+              cursor: "pointer",
+            }}
+          >
+            <UserCog size={15} color={COLORS.gold} /> Edit creator profile
           </button>
           <button
             onClick={() => onOpenCreator(creator)}

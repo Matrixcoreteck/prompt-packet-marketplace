@@ -39,6 +39,7 @@ export default function ProfilePage({
   isCreator,
   onUpdateDisplayName,
   onOpenCreator,
+  onBecomeCreator,
 }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(user.displayName);
@@ -49,7 +50,7 @@ export default function ProfilePage({
     await onUpdateDisplayName(name.trim());
     setEditing(false);
     setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
+    setTimeout(() => setSaved(false), 2500);
   };
 
   return (
@@ -103,6 +104,33 @@ export default function ProfilePage({
         </button>
       )}
 
+      {saved && (
+        <div
+          className="flex items-center gap-2 mt-6 p-3"
+          style={{ background: COLORS.inkRaised, border: `1px solid ${COLORS.goldDim}`, borderRadius: "2px" }}
+        >
+          <Check size={14} color={COLORS.gold} />
+          <span style={{ fontFamily: FONT_SANS, fontSize: "12.5px", color: COLORS.textOnInk }}>
+            Profile updated — your display name is now {user.displayName}.
+          </span>
+        </div>
+      )}
+
+      {!isCreator && (
+        <button
+          onClick={onBecomeCreator}
+          className="w-full text-left mt-6 flex items-center justify-between gap-3 p-4"
+          style={{ background: COLORS.inkRaised, border: `1px solid ${COLORS.goldDim}`, borderRadius: "3px", cursor: "pointer" }}
+        >
+          <span style={{ fontFamily: FONT_SANS, fontSize: "13.5px", color: COLORS.textOnInk }}>
+            Turn your AI knowledge into products and earn from every sale.
+          </span>
+          <span style={{ fontFamily: FONT_MONO, fontSize: "11px", letterSpacing: "0.08em", color: COLORS.goldDim, flexShrink: 0 }}>
+            BECOME A CREATOR →
+          </span>
+        </button>
+      )}
+
       {/* Settings — display name only */}
       <div className="mt-10">
         <div
@@ -111,7 +139,7 @@ export default function ProfilePage({
         >
           <span>SETTINGS</span>
           <span style={{ color: COLORS.textOnInkDim, letterSpacing: "0.05em", fontSize: "10px" }}>
-            DISPLAY NAME ONLY
+            MORE SETTINGS ON THE SETTINGS PAGE
           </span>
         </div>
         <div
@@ -147,6 +175,7 @@ export default function ProfilePage({
                     fontSize: "11px",
                     fontWeight: 600,
                     letterSpacing: "0.06em",
+                    ...(!name.trim() ? { opacity: 0.5, cursor: "default" } : {}),
                     color: COLORS.ink,
                     background: COLORS.gold,
                     border: "none",

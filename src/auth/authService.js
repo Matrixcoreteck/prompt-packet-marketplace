@@ -42,6 +42,8 @@ function sanitize(account) {
     displayName: account.displayName,
     createdAt: account.createdAt,
     creatorName: account.creatorName || null,
+    creatorBio: account.creatorBio || "",
+    creatorInitials: account.creatorInitials || null,
   };
 }
 
@@ -136,6 +138,55 @@ export async function setCreatorName(userId, name) {
     await window.storage.set(ACCOUNT_PREFIX + userId, account, false);
   }
   return sanitize(account);
+}
+
+// The creator's public storefront profile. One identity per account:
+// the shared record `creatorProfile:<name>` carries bio/initials for the
+// public storefront, and stays keyed to the account (userId). Renaming moves
+// the record to the new name so no duplicate profiles pile up — published
+// products are re-pointed by the app (same creatorUserId, new sellerName).
+export async function saveCreatorProfile(userId, { name, bio, initials }) {
+  const account = await getAccount(userId);
+  if (!account) throw new Error("Account not found.");
+  const cleanName = (name || "").trim();
+  if (!cleanName) throw new Error("A creator name is required.");
+  const oldName = account.creatorName || null;
+  account.creatorName = cleanName;
+  account.creatorBio = (bio || "").trim();
+  account.creatorInitials = ((initials || "").trim().slice(0, 2) || "").toUpperCase() || null;
+  await window.storage.set(ACCOUNT_PREFIX + userId, account, false);
+  if (oldName && oldName !== cleanName) {
+    try {
+      await window.storage.delete(`creatorProfile:${oldName}`, true);
+    } catch {
+      /* record may not exist */
+    }
+  }
+  await window.storage.set(
+    `creatorProfile:${cleanName}`,
+    {
+      name: cleanName,
+      bio: account.creatorBio,
+      initials: account.creatorInitials,
+      userId,
+      updatedAt: new Date().toISOString(),
+    },
+    true
+  );
+  return sanitize(account);
+}
+
+// Password change — same salted-hash scheme as signup, requires the current
+// password. Never stores or exposes plaintext.
+export async function changePassword(userId, currentPassword, newPassword) {
+  const account = await getAccount(userId);
+  if (!account) throw new Error("Account not found.");
+  const hash = await sha256Hex(account.passwordSalt + ":" + currentPassword);
+  if (hash !== account.passwordHash) throw new Error("Your current password is incorrect.");
+  const salt = randomSalt();
+  account.passwordSalt = salt;
+  account.passwordHash = await sha256Hex(salt + ":" + newPassword);
+  await window.storage.set(ACCOUNT_PREFIX + userId, account, false);
 }
 
 // One-time migration: the pre-account demo kept purchases, favorites,

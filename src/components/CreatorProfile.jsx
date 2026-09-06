@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { FONT_DISPLAY, FONT_MONO, FONT_SANS, COLORS } from "../theme";
 import { buildCreator, formatSales } from "../data/marketplace";
 import { CreatorAvatar, SectionHeading, BackButton } from "./ui";
@@ -27,6 +27,21 @@ function StatChip({ children, tone = "dim" }) {
 // without changing this page's contract.
 export default function CreatorProfile({ name, packs, owned, onOpenProduct, onBack }) {
   const creator = buildCreator(name, packs || []);
+  // Real creator accounts keep a public profile record (bio / initials).
+  // If present it enriches the storefront; otherwise the storefront falls
+  // back to the product-derived demo view.
+  const [profile, setProfile] = useState(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await window.storage.get(`creatorProfile:${name}`, true);
+        if (res && res.value && typeof res.value === "object") setProfile(res.value);
+      } catch {
+        /* no profile record */
+      }
+    })();
+  }, [name]);
+  const bio = profile && profile.bio && profile.bio.trim() ? profile.bio.trim() : creator.description;
 
   return (
     <div>
@@ -34,7 +49,7 @@ export default function CreatorProfile({ name, packs, owned, onOpenProduct, onBa
         <div className="max-w-[1100px] mx-auto">
           <BackButton onClick={onBack} />
           <div className="flex items-center gap-4 mt-6 flex-wrap">
-            <CreatorAvatar name={creator.name} size={64} />
+            <CreatorAvatar name={creator.name} size={64} initials={profile?.initials} />
             <div>
               <div style={{ fontFamily: FONT_MONO, fontSize: "10.5px", letterSpacing: "0.18em", color: COLORS.goldDim }}>
                 CREATOR
@@ -64,7 +79,7 @@ export default function CreatorProfile({ name, packs, owned, onOpenProduct, onBa
               marginBottom: 0,
             }}
           >
-            {creator.description}
+            {bio}
           </p>
           <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: "12px" }}>
             {creator.rating != null ? (

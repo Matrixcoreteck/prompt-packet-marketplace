@@ -6,6 +6,8 @@ import {
   logOut as logOutSvc,
   updateDisplayName as updateDisplayNameSvc,
   setCreatorName as setCreatorNameSvc,
+  saveCreatorProfile as saveCreatorProfileSvc,
+  changePassword as changePasswordSvc,
 } from "../auth/authService";
 
 // Auth state for the app. `user` is:
@@ -87,7 +89,47 @@ export function useAuth() {
     [user]
   );
 
+  // Create or edit the creator profile (name / bio / initials).
+  const saveCreatorProfile = useCallback(
+    async (fields) => {
+      try {
+        const u = await saveCreatorProfileSvc(user.id, fields);
+        setUser(u);
+        return u;
+      } catch (e) {
+        setAuthError(e.message);
+        return null;
+      }
+    },
+    [user]
+  );
+
+  // Returns null on success, or an error message.
+  const changePassword = useCallback(
+    async (currentPassword, newPassword) => {
+      try {
+        await changePasswordSvc(user.id, currentPassword, newPassword);
+        return null;
+      } catch (e) {
+        return e.message;
+      }
+    },
+    [user]
+  );
+
   const clearAuthError = useCallback(() => setAuthError(null), []);
 
-  return { user, busy, authError, signUp, logIn, logOut, updateDisplayName, setCreatorName, clearAuthError };
+  return {
+    user,
+    busy,
+    authError,
+    signUp,
+    logIn,
+    logOut,
+    updateDisplayName,
+    setCreatorName,
+    saveCreatorProfile,
+    changePassword,
+    clearAuthError,
+  };
 }
