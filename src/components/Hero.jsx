@@ -34,7 +34,8 @@ export default function Hero({ query, onQueryChange, onExplore, onSell, productC
           margin: 0,
         }}
       >
-        Find prompts, workflows, templates and AI systems that help you get real work done.
+        Discover ready-to-use AI prompt packs, workflows, and digital tools created by people who
+        know how to get results from AI.
       </p>
 
       <form
@@ -125,11 +126,24 @@ export default function Hero({ query, onQueryChange, onExplore, onSell, productC
 
       <p
         style={{
+          fontFamily: FONT_SANS,
+          fontSize: "12.5px",
+          color: COLORS.goldDim,
+          letterSpacing: "0.02em",
+          marginTop: "10px",
+          marginBottom: 0,
+        }}
+      >
+        Buy useful AI products. Create your own. Sell your expertise.
+      </p>
+
+      <p
+        style={{
           fontFamily: FONT_MONO,
           fontSize: "11px",
           color: COLORS.textOnInkDim,
           letterSpacing: "0.04em",
-          marginTop: "8px",
+          marginTop: "6px",
         }}
       >
         {productCount} AI PRODUCTS · 7 CATEGORIES · NEW PRODUCTS WEEKLY

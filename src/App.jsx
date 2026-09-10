@@ -22,6 +22,10 @@ import ProfilePage from "./components/ProfilePage";
 import SettingsPage from "./components/SettingsPage";
 import BecomeCreator from "./components/creator/BecomeCreator";
 import CreatorProfileForm from "./components/creator/CreatorProfileForm";
+import HowItWorks from "./components/home/HowItWorks";
+import ForBuyers from "./components/home/ForBuyers";
+import ForCreators from "./components/home/ForCreators";
+import MarketplaceExplanation from "./components/home/MarketplaceExplanation";
 import { SectionHeading } from "./components/ui";
 
 // Pages that require an account. Everything else — marketplace, search,
@@ -147,6 +151,21 @@ export default function App() {
     setActiveSubcategory("All");
   };
 
+  // "For Buyers" goal areas → existing catalog filtering. Group chips filter
+  // by category group, subcategory chips go one level deeper, and areas with
+  // no direct category yet run a catalog search (titles, descriptions,
+  // categories).
+  const selectBuyerArea = ({ group, subcategory, query: areaQuery }) => {
+    setQuery(areaQuery || "");
+    if (areaQuery) {
+      selectGroup("All");
+    } else if (group) {
+      selectGroup(group);
+      if (subcategory) setActiveSubcategory(subcategory);
+    }
+    setTimeout(scrollToCatalog, 0);
+  };
+
   const openProduct = (pack) => {
     setSelectedId(pack.id);
     if (userId && trackRecent) markViewed(pack.id);
@@ -166,6 +185,7 @@ export default function App() {
       !query ||
       p.title.toLowerCase().includes(q) ||
       p.description.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q) ||
       (p.sellerName || "").toLowerCase().includes(q);
     return matchesGroup && matchesSub && matchesQuery;
   });
@@ -331,13 +351,15 @@ export default function App() {
                 query={query}
                 onQueryChange={setQuery}
                 onExplore={scrollToCatalog}
-                onSell={() => switchView("sell")}
+                onSell={() => navGo("sell")}
                 productCount={packs ? packs.length : 0}
               />
 
               {!hasFilters && packs && (
                 <FeaturedProducts packs={packs} owned={owned} onOpen={openProduct} />
               )}
+              {!hasFilters && <HowItWorks />}
+              {!hasFilters && <ForBuyers onSelectArea={selectBuyerArea} />}
               {!hasFilters && (
                 <CategorySection
                   onSelect={(g) => {
@@ -460,6 +482,9 @@ export default function App() {
                   </div>
                 )}
               </section>
+
+              {!hasFilters && <ForCreators onBecomeCreator={() => navGo("sell")} />}
+              {!hasFilters && <MarketplaceExplanation />}
             </>
           )}
 

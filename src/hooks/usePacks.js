@@ -21,7 +21,14 @@ export function usePacks() {
           /* skip unreadable entry */
         }
       }
-      setPacks(loaded.length ? loaded.map(normalizePack) : STARTER_PACKS);
+      // Demo products stay in the catalog alongside real published ones.
+      if (loaded.length) {
+        const storedIds = new Set(loaded.map((p) => p.id));
+        const starters = STARTER_PACKS.filter((s) => !storedIds.has(s.id));
+        setPacks([...loaded, ...starters].map(normalizePack));
+      } else {
+        setPacks(STARTER_PACKS);
+      }
     } catch (e) {
       setError("Couldn't load the catalog. Showing sample packs instead.");
       setPacks(STARTER_PACKS);
