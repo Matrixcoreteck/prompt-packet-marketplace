@@ -9,7 +9,7 @@ export default function BuilderSummary({ draft, promptCount }) {
   const checks = [
     { ok: Boolean(draft.title.trim()), label: "Product title" },
     { ok: Boolean(draft.description.trim()), label: "Description" },
-    { ok: Boolean(draft.sellerName.trim()), label: "Creator name" },
+    { ok: Boolean(draft.category), label: "Category" },
     { ok: Boolean(draft.price !== "" && Number(draft.price) >= 0), label: "Price" },
     { ok: promptCount > 0, label: "At least one prompt" },
   ];
@@ -63,6 +63,16 @@ export default function BuilderSummary({ draft, promptCount }) {
         </span>
       </div>
       <div className="flex flex-col gap-1.5" style={{ borderTop: `1px solid ${COLORS.ink}`, paddingTop: "12px" }}>
+        <span
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: "9.5px",
+            letterSpacing: "0.18em",
+            color: done === checks.length ? COLORS.gold : COLORS.textOnInkDim,
+          }}
+        >
+          PRODUCT READY — {done === checks.length ? "YES" : "NOT YET"}
+        </span>
         {checks.map((c) => (
           <span key={c.label} className="inline-flex items-center gap-2">
             {c.ok ? <Check size={13} color={COLORS.gold} /> : <Circle size={13} color={COLORS.textOnInkDim} />}

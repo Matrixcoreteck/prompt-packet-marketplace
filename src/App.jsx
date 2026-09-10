@@ -121,6 +121,14 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, view]);
 
+  // The moment onboarding succeeds the user IS a creator — the onboarding
+  // screen unmounts, so drop them straight into the builder instead of a
+  // blank view.
+  useEffect(() => {
+    if (user && view === "becomeCreator" && user.creatorName) switchView("sell");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, view]);
+
   // Nav destination handler: logged-out users asking for private pages go
   // straight to login and come back after signing in.
   const navGo = (key) => {

@@ -11,11 +11,13 @@ const newPrompt = () => ({
   id: `p-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
   name: "",
   type: "prompt",
+  notes: "",
   text: "",
 });
 
 const emptyDraft = (creatorName) => ({
   title: "",
+  shortDescription: "",
   description: "",
   category: CATEGORY_GROUPS[GROUP_NAMES[0]][0],
   price: "",
@@ -30,10 +32,12 @@ function seedDraftFromPack(p) {
     id: `p-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
     name: p.promptMeta?.[i]?.name || "",
     type: p.promptMeta?.[i]?.type || "prompt",
+    notes: p.promptMeta?.[i]?.notes || "",
     text,
   }));
   return {
     title: p.title || "",
+    shortDescription: p.shortDescription || "",
     description: p.description || "",
     category: p.category || CATEGORY_GROUPS[GROUP_NAMES[0]][0],
     price: p.price != null ? String(p.price) : "",
@@ -122,7 +126,12 @@ export default function ProductBuilder({ packs, owned, user, initialPack, onPubl
   const promptItems = useMemo(
     () =>
       draft.prompts
-        .map((p) => ({ name: (p.name || "").trim(), type: p.type || "prompt", text: (p.text || "").trim() }))
+        .map((p) => ({
+          name: (p.name || "").trim(),
+          type: p.type || "prompt",
+          notes: (p.notes || "").trim(),
+          text: (p.text || "").trim(),
+        }))
         .filter((i) => i.text),
     [draft.prompts]
   );
@@ -160,15 +169,43 @@ export default function ProductBuilder({ packs, owned, user, initialPack, onPubl
     });
   const addPrompt = () => setDraft((d) => ({ ...d, prompts: [...d.prompts, newPrompt()] }));
 
-  const saveDraft = async () => {
+  // Drafts belong to this creator only and live in personal storage —
+  // the marketplace never reads this key, so drafts stay private.
+  const persistDraft = async (d) => {
     try {
-      await window.storage.set(draftKey, JSON.stringify(draft), false);
-      setSavedFlash(true);
-      setTimeout(() => setSavedFlash(false), 1600);
+      await window.storage.set(draftKey, JSON.stringify(d), false);
+      return true;
     } catch {
-      /* storage unavailable — draft just won't persist */
+      return false; /* storage unavailable — draft just won't persist */
     }
   };
+
+  const saveDraft = async () => {
+    if (draft.sourceId) return; // editing a published product — nothing to draft
+    if (await persistDraft(draft)) {
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 1600);
+    }
+  };
+
+  // Auto-save: creators never lose their work if they navigate away
+  // mid-build. Only a draft with actual content is persisted, and never
+  // while editing a published product (that would clobber the real draft).
+  const draftHasContent =
+    !draft.sourceId &&
+    Boolean(
+      draft.title.trim() ||
+        draft.description.trim() ||
+        draft.shortDescription.trim() ||
+        draft.price !== "" ||
+        draft.prompts.some((p) => p.text.trim() || p.name.trim() || p.notes.trim())
+    );
+  useEffect(() => {
+    if (!draftLoaded || mode !== "edit" || !draftHasContent) return;
+    const t = setTimeout(() => persistDraft(draft), 700);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, draftLoaded, mode, draftHasContent]);
 
   const publish = async () => {
     if (missing.length) {
@@ -181,12 +218,13 @@ export default function ProductBuilder({ packs, owned, user, initialPack, onPubl
     try {
       const record = await onPublish({
         title: draft.title.trim(),
+        shortDescription: draft.shortDescription.trim(),
         description: draft.description.trim(),
         category: draft.category,
         price: Number(draft.price),
         sellerName: draft.sellerName.trim(),
         prompts: promptItems.map((i) => i.text),
-        promptMeta: promptItems.map((i) => ({ name: i.name, type: i.type })),
+        promptMeta: promptItems.map((i) => ({ name: i.name, type: i.type, notes: i.notes })),
         type: productType,
         status: "published",
         createdAt: Date.now(),
@@ -231,6 +269,7 @@ export default function ProductBuilder({ packs, owned, user, initialPack, onPubl
     const previewPack = normalizePack({
       id: "preview-draft",
       title: draft.title.trim() || "Untitled AI Product",
+      shortDescription: draft.shortDescription.trim(),
       description: draft.description.trim() || "A short description of your product will appear here for buyers.",
       category: draft.category,
       price: draft.price !== "" && !Number.isNaN(Number(draft.price)) ? Number(draft.price) : 0,
@@ -370,13 +409,28 @@ export default function ProductBuilder({ packs, owned, user, initialPack, onPubl
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label style={labelStyle}>DESCRIPTION</label>
+                <label style={labelStyle}>SHORT DESCRIPTION</label>
+                <input
+                  style={inputStyle}
+                  value={draft.shortDescription}
+                  onChange={(e) => setField("shortDescription", e.target.value)}
+                  placeholder="20 opening lines tuned for B2B outreach, organized by objection type."
+                />
+                <span style={{ fontFamily: FONT_MONO, fontSize: "9.5px", letterSpacing: "0.08em", color: COLORS.textOnInkDim }}>
+                  ONE OR TWO LINES — SHOWN AT THE TOP OF YOUR PRODUCT PAGE.
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label style={labelStyle}>FULL PRODUCT DESCRIPTION</label>
                 <textarea
-                  style={{ ...inputStyle, minHeight: "60px", resize: "vertical" }}
+                  style={{ ...inputStyle, minHeight: "90px", resize: "vertical" }}
                   value={draft.description}
                   onChange={(e) => setField("description", e.target.value)}
-                  placeholder="A complete AI workflow for generating YouTube ideas, hooks, scripts and titles."
+                  placeholder="Explain exactly what buyers get, who it's for, and how to use it. What does each prompt do? What results should buyers expect?"
                 />
+                <span style={{ fontFamily: FONT_MONO, fontSize: "9.5px", letterSpacing: "0.08em", color: COLORS.textOnInkDim }}>
+                  SHOWN IN THE "ABOUT THIS PRODUCT" SECTION — BE HONEST AND SPECIFIC.
+                </span>
               </div>
               <div className="flex gap-3 flex-wrap">
                 <div className="flex flex-col gap-1 flex-1" style={{ minWidth: "180px" }}>
@@ -490,6 +544,20 @@ export default function ProductBuilder({ packs, owned, user, initialPack, onPubl
               Preview the exact page buyers will see — then save a draft to continue later, or
               publish straight to the marketplace.
             </p>
+            <p
+              style={{
+                fontFamily: FONT_SANS,
+                fontSize: "12.5px",
+                color: COLORS.goldDim,
+                lineHeight: 1.6,
+                margin: 0,
+                padding: "10px 12px",
+                background: COLORS.ink,
+                borderRadius: "2px",
+              }}
+            >
+              Make your product useful and specific. Buyers should understand exactly what they're getting.
+            </p>
             <div className="flex flex-col sm:flex-row gap-2.5 flex-wrap">
               <button
                 onClick={() => setMode("preview")}
@@ -529,7 +597,8 @@ export default function ProductBuilder({ packs, owned, user, initialPack, onPubl
               </button>
               <button
                 onClick={publish}
-                disabled={publishing}
+                disabled={publishing || missing.length > 0}
+                title={missing.length ? `Complete the checklist first: ${missing.join(", ")}` : "Publish to the marketplace"}
                 className="inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:ml-auto"
                 style={{
                   fontFamily: FONT_SANS,
@@ -539,7 +608,8 @@ export default function ProductBuilder({ packs, owned, user, initialPack, onPubl
                   background: COLORS.gold,
                   border: "none",
                   borderRadius: "2px",
-                  cursor: publishing ? "default" : "pointer",
+                  cursor: publishing || missing.length ? "default" : "pointer",
+                  opacity: missing.length ? 0.4 : 1,
                 }}
               >
                 <Rocket size={15} /> {publishing ? "PUBLISHING…" : "Publish product"}

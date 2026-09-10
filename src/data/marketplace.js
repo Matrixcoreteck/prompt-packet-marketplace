@@ -257,6 +257,7 @@ export function normalizePack(p) {
       return {
         name: (typeof m === "object" && m.name) || "",
         type: (typeof m === "object" && m.type) || "prompt",
+        notes: (typeof m === "object" && m.notes) || "",
       };
     });
   }

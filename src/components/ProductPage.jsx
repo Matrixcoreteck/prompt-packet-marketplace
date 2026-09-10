@@ -164,7 +164,7 @@ export default function ProductPage({
                   overflow: "hidden",
                 }}
               >
-                {pack.description}
+                {pack.shortDescription || pack.description}
               </p>
               <div style={{ marginTop: "4px" }}>
                 <CreatorPreview name={pack.sellerName} dark onClick={() => onOpenCreator(pack.sellerName)} />

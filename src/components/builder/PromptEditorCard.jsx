@@ -103,6 +103,16 @@ export default function PromptEditorCard({ index, total, prompt, onChange, onDel
       </div>
 
       <div className="flex flex-col gap-1">
+        <label style={labelStyle}>INSTRUCTIONS FOR BUYERS — OPTIONAL</label>
+        <input
+          style={inputStyle}
+          value={prompt.notes}
+          onChange={(e) => onChange({ ...prompt, notes: e.target.value })}
+          placeholder="e.g. Replace {{TOPIC}} with your niche before running this prompt."
+        />
+      </div>
+
+      <div className="flex flex-col gap-1">
         <label style={labelStyle}>PROMPT</label>
         <textarea
           style={{ ...inputStyle, fontFamily: FONT_MONO, fontSize: "12.5px", minHeight: "90px", resize: "vertical" }}

@@ -5,7 +5,8 @@ import { SectionHeading } from "../ui";
 // Full product description from the creator. The hero shows a short excerpt;
 // this section carries the complete text.
 export default function AboutProduct({ pack }) {
-  if (!pack.description) return null;
+  const text = pack.description || pack.shortDescription;
+  if (!text) return null;
   return (
     <section>
       <SectionHeading kicker="THE DETAILS" title="About This Product" />
@@ -19,7 +20,7 @@ export default function AboutProduct({ pack }) {
           maxWidth: "720px",
         }}
       >
-        {pack.description}
+        {text}
       </p>
     </section>
   );

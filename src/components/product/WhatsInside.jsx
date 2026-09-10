@@ -76,6 +76,11 @@ function PromptCard({ prompt, index, showCopy, meta }) {
               {meta.type && meta.type !== "prompt" ? ` · ${meta.type.toUpperCase()}` : ""}
             </span>
           ) : null}
+          {meta?.notes ? (
+            <span style={{ fontFamily: FONT_SANS, fontSize: "11.5px", color: COLORS.textOnPaperDim, lineHeight: 1.5 }}>
+              {meta.notes}
+            </span>
+          ) : null}
           <span
             className="min-w-0"
             style={{
