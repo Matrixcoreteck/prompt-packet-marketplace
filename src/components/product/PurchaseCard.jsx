@@ -52,7 +52,7 @@ export default function PurchaseCard({ pack, owned, purchasing, onPurchase, onOp
                 cursor: "pointer",
               }}
             >
-              <BookOpen size={14} /> OPEN IN LIBRARY
+              <BookOpen size={14} /> OPEN IN MY LIBRARY
             </button>
           )}
         </div>
@@ -75,7 +75,7 @@ export default function PurchaseCard({ pack, owned, purchasing, onPurchase, onOp
           }}
         >
           {purchasing ? <Loader2 size={14} className="animate-spin" /> : null}
-          {purchasing ? "PROCESSING…" : "UNLOCK THIS PACK"}
+          {purchasing ? "PROCESSING…" : "GET THIS PRODUCT"}
         </button>
       )}
 

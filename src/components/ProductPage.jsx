@@ -6,6 +6,8 @@ import { Tag_, SectionHeading, BackButton } from "./ui";
 import CreatorPreview from "./CreatorPreview";
 import PurchaseCard from "./product/PurchaseCard";
 import WhatsInside from "./product/WhatsInside";
+import AboutProduct from "./product/AboutProduct";
+import WhatsIncluded from "./product/WhatsIncluded";
 import TrySample from "./product/TrySample";
 import CreatorSection from "./product/CreatorSection";
 import Reviews from "./product/Reviews";
@@ -91,6 +93,7 @@ export default function ProductPage({
   onOpenProduct,
   onOpenCreator,
   onOpenInLibrary,
+  ownProduct = false,
 }) {
   const stats = pack.stats || {};
   const isOwned = owned.has(pack.id);
@@ -119,6 +122,21 @@ export default function ProductPage({
                 >
                   {(pack.type || "Prompt Pack").toUpperCase()}
                 </span>
+                {ownProduct && (
+                  <span
+                    style={{
+                      fontFamily: FONT_MONO,
+                      fontSize: "10.5px",
+                      letterSpacing: "0.08em",
+                      padding: "2px 8px",
+                      borderRadius: "3px",
+                      color: COLORS.ink,
+                      background: COLORS.gold,
+                    }}
+                  >
+                    YOUR PRODUCT
+                  </span>
+                )}
               </div>
               <h1
                 style={{
@@ -140,6 +158,10 @@ export default function ProductPage({
                   lineHeight: 1.65,
                   maxWidth: "560px",
                   margin: 0,
+                  display: "-webkit-box",
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
                 }}
               >
                 {pack.description}
@@ -152,6 +174,7 @@ export default function ProductPage({
                   {stats.rating != null ? `★ ${stats.rating.toFixed(1)}` : "JUST PUBLISHED"}
                 </StatChip>
                 <StatChip>{formatSales(stats.salesCount)} SALES</StatChip>
+                {stats.ratingCount > 0 && <StatChip>DEMO · {stats.ratingCount} REVIEWS</StatChip>}
                 <StatChip>
                   {pack.prompts.length} {countLabel(pack).toUpperCase()}
                 </StatChip>
@@ -182,6 +205,8 @@ export default function ProductPage({
         <WhatsInside pack={pack} owned={isOwned} />
         <TrySample pack={pack} />
         <WhatYouGet pack={pack} />
+      <AboutProduct pack={pack} />
+      <WhatsIncluded pack={pack} />
         <CreatorSection pack={pack} allPacks={allPacks} onOpenCreator={onOpenCreator} />
         <Reviews pack={pack} />
         <RelatedProducts pack={pack} packs={allPacks} owned={owned} onOpenProduct={onOpenProduct} />

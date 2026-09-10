@@ -501,6 +501,11 @@ export default function App() {
               onOpenProduct={openProduct}
               onOpenCreator={openCreator}
               onOpenInLibrary={() => switchView("library")}
+              ownProduct={Boolean(
+                user &&
+                  (selectedPack.creatorUserId === user.id ||
+                    (user.creatorName && selectedPack.sellerName === user.creatorName))
+              )}
             />
           )}
 

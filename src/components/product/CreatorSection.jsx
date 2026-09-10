@@ -13,7 +13,7 @@ export default function CreatorSection({ pack, allPacks, onOpenCreator }) {
 
   return (
     <section>
-      <SectionHeading kicker="THE MAKER" title="Created By" />
+      <SectionHeading kicker="THE MAKER" title={`Created by ${pack.sellerName}`} />
       <div
         className="flex items-center justify-between gap-4 flex-wrap p-6"
         style={{ background: COLORS.inkRaised, borderRadius: "3px" }}

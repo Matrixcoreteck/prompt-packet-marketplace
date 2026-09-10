@@ -95,7 +95,7 @@ function PromptCard({ prompt, index, showCopy, meta }) {
   );
 }
 
-function LockedCard({ prompt }) {
+function LockedCard({ prompt, name }) {
   return (
     <div
       style={{
@@ -106,19 +106,35 @@ function LockedCard({ prompt }) {
         overflow: "hidden",
       }}
     >
-      <div
-        aria-hidden
-        style={{
-          fontFamily: FONT_MONO,
-          fontSize: "12.5px",
-          color: COLORS.textOnPaper,
-          lineHeight: 1.6,
-          whiteSpace: "pre-wrap",
-          filter: "blur(5px)",
-          userSelect: "none",
-        }}
-      >
-        {prompt}
+      <div className="flex flex-col gap-1">
+        {name ? (
+          <span
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: "10px",
+              letterSpacing: "0.08em",
+              color: COLORS.textOnPaperDim,
+              filter: "blur(2px)",
+              userSelect: "none",
+            }}
+          >
+            {name.toUpperCase()}
+          </span>
+        ) : null}
+        <div
+          aria-hidden
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: "12.5px",
+            color: COLORS.textOnPaper,
+            lineHeight: 1.6,
+            whiteSpace: "pre-wrap",
+            filter: "blur(5px)",
+            userSelect: "none",
+          }}
+        >
+          {prompt}
+        </div>
       </div>
       <div
         className="absolute inset-0 flex items-center justify-center gap-1.5"
@@ -130,9 +146,13 @@ function LockedCard({ prompt }) {
   );
 }
 
+// Non-owners see a short excerpt of the first prompts; the rest stays locked.
+const excerpt = (text) => (text.length > 240 ? `${text.slice(0, 240).trimEnd()}…` : text);
+
 export default function WhatsInside({ pack, owned }) {
-  const visible = owned ? pack.prompts : pack.prompts.slice(0, 1);
-  const locked = owned ? [] : pack.prompts.slice(1);
+  const previewCount = owned ? pack.prompts.length : Math.min(2, pack.prompts.length);
+  const visible = pack.prompts.slice(0, previewCount);
+  const locked = owned ? [] : pack.prompts.slice(previewCount);
 
   return (
     <section>
@@ -147,15 +167,23 @@ export default function WhatsInside({ pack, owned }) {
       />
       <div className="flex flex-col gap-2.5">
         {visible.map((p, i) => (
-          <PromptCard key={i} prompt={p} index={i} showCopy={owned} meta={pack.promptMeta?.[i]} />
+          <PromptCard
+            key={i}
+            prompt={owned ? p : excerpt(p)}
+            index={i}
+            showCopy={owned}
+            meta={pack.promptMeta?.[i]}
+          />
         ))}
         {locked.map((p, i) => (
-          <LockedCard key={i} prompt={p} />
+          <LockedCard key={i} prompt={p} name={pack.promptMeta?.[previewCount + i]?.name} />
         ))}
       </div>
       {!owned && (
         <p style={{ fontFamily: FONT_MONO, fontSize: "11.5px", color: COLORS.textOnInkDim, marginTop: "12px" }}>
-          + {locked.length} more {countLabel(pack)} unlock after purchase
+          {locked.length > 0
+            ? `+ ${locked.length} more ${countLabel(pack)} unlock after purchase`
+            : "The complete contents unlock after purchase."}
         </p>
       )}
     </section>
